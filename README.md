@@ -7,10 +7,7 @@ It allows users to view their transfer history, withdraw money, transfer money t
 - [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Setup](#setup)
-- [Database Structure](#database-structure)
 - [How to Run](#how-to-run)
-- [Usage](#usage)
-- [Code Overview](#code-overview)
 - [Notes](#notes)
 
 
@@ -86,7 +83,7 @@ Under package org.execute,the Main.java file contains the entry point of the app
 <img width="1433" alt="image" src="https://github.com/CoCoHu717/ATMRepo/assets/174446249/e152a74a-562d-4ce2-99f8-b3d7141ecd93">
 <img width="479" alt="image" src="https://github.com/CoCoHu717/ATMRepo/assets/174446249/17b6ebd3-ad3a-485c-8f26-5f08f17581af">
 
-## Note
+## Notes
 - Ensure your MySQL server is running and accessible.
 - Adjust the database URL, username, and password in the db.properties file according to your MySQL configuration.
 - The project uses UUIDs for user and transfer IDs, ensuring unique identifiers for all records.
