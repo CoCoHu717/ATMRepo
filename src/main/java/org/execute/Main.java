@@ -9,10 +9,10 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         ATM atm = null;
         int errorCount = 0;
-        while (errorCount<=3 && atm == null) {
+        System.out.print("Enter your bank account: ");
+        String bankAccount = scanner.next();
+        while (errorCount<3 && atm == null) {
             try {
-                System.out.print("Enter your bank account: ");
-                String bankAccount = scanner.next();
                 System.out.print("Enter your password: ");
                 String password = scanner.next();
                 atm = new ATM(password, bankAccount);
