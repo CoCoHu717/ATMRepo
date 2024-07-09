@@ -58,7 +58,23 @@ public class ATM {
 
     private void getTransferList() {
         try (PreparedStatement stmt = connection.prepareStatement(
-                "SELECT * FROM transfers WHERE from_user_id = ? OR to_user_id = ?")) {
+
+                "SELECT \n" +
+                        "    t.id AS transfer_id,\n" +
+                        "    from_user.username AS from_username,\n" +
+                        "    t.from_bank_account AS from_bank_account,\n" +
+                        "    to_user.username AS to_username,\n" +
+                        "    t.to_bank_account AS to_bank_account,\n" +
+                        "    t.transfer_date,\n" +
+                        "    t.amount\n" +
+                        "FROM \n" +
+                        "    transfers t\n" +
+                        "JOIN \n" +
+                        "    users from_user ON t.from_user_id = from_user.id AND t.from_bank_account = from_user.bank_account\n" +
+                        "JOIN \n" +
+                        "    users to_user ON t.to_user_id = to_user.id AND t.to_bank_account = to_user.bank_account"
+                        +
+                        "    where from_user_id = ? OR to_user_id = ?")) {
             stmt.setString(1, userId);
             stmt.setString(2, userId);
 
@@ -66,8 +82,8 @@ public class ATM {
                 boolean foundTransfer = false;
                 while (rs.next()) {
                     foundTransfer = true;
-                    System.out.printf("Transfer ID: %s, From User: %s, To User: %s, Amount: %.2f, Date: %s\n",
-                            rs.getString("id"), rs.getString("from_user_id"), rs.getString("to_user_id"), rs.getBigDecimal("amount"),
+                    System.out.printf("Transfer ID: %s, From User: %s, From BankAccount: %s,To User: %s,  To BankAccount: %s,Amount: %.2f, Date: %s\n",
+                            rs.getString("transfer_id"), rs.getString("from_username"), rs.getString("from_bank_account"), rs.getString("to_username"), rs.getString("to_bank_account"),rs.getBigDecimal("amount"),
                             rs.getTimestamp("transfer_date"));
                 }
                 if (!foundTransfer) {
@@ -80,25 +96,25 @@ public class ATM {
     }
 
     private void withdraw(Scanner scanner) {
-        System.out.print("Enter amount to withdraw: ");
-        double amount = scanner.nextDouble();
-        if(amount <= 0){
-            System.out.println("Enter wrong amount, try again please!");
-            return;
-        }
         try (PreparedStatement balanceStmt = connection.prepareStatement("SELECT balance FROM users WHERE id = ? AND bank_account = ?");
              PreparedStatement updateStmt = connection.prepareStatement("UPDATE users SET balance = balance - ? WHERE id = ? AND bank_account = ?")) {
             balanceStmt.setString(1, userId);
             balanceStmt.setString(2, bankAccount);
-
             try (ResultSet rs = balanceStmt.executeQuery()) {
                 if (rs.next()) {
                     double currentBalance = rs.getDouble("balance");
+                    System.out.printf("Current balance is %S, please enter amount to withdraw: ", currentBalance);
+                    double amount = scanner.nextDouble();
+                    if (amount <= 0) {
+                        System.out.println("Enter wrong amount, try again please!");
+                        return;
+                    }
                     if (currentBalance >= amount) {
                         updateStmt.setDouble(1, amount);
                         updateStmt.setString(2, userId);
                         updateStmt.setString(3, bankAccount);
                         updateStmt.executeUpdate();
+                        System.out.println("Withdraw successful!");
                     } else {
                         System.out.println("Insufficient funds.");
                     }
@@ -112,18 +128,10 @@ public class ATM {
     private void transfer(Scanner scanner) {
         System.out.print("Enter recipient bank account: ");
         String recipientBankAccount = scanner.next();
-        if(recipientBankAccount.equals(this.bankAccount)){
+        if (recipientBankAccount.equals(this.bankAccount)) {
             System.out.println("You can not transfer to your own bank account, try again please!");
             return;
         }
-
-        System.out.print("Enter amount to transfer: ");
-        double amount = scanner.nextDouble();
-        if(amount <= 0){
-            System.out.println("Enter wrong amount, try again please!");
-            return;
-        }
-
         try (PreparedStatement balanceStmt = connection.prepareStatement("SELECT balance FROM users WHERE id = ? AND bank_account = ?");
              PreparedStatement updateStmt = connection.prepareStatement("UPDATE users SET balance = balance - ? WHERE id = ? AND bank_account = ?");
              PreparedStatement recipientStmt = connection.prepareStatement("UPDATE users SET balance = balance + ? WHERE id = ? AND bank_account = ?");
@@ -134,6 +142,12 @@ public class ATM {
             try (ResultSet rs = balanceStmt.executeQuery()) {
                 if (rs.next()) {
                     double currentBalance = rs.getDouble("balance");
+                    System.out.printf("Current balance is %S, please enter amount to transfer: ", currentBalance);
+                    double amount = scanner.nextDouble();
+                    if (amount <= 0) {
+                        System.out.println("Enter wrong amount, try again please!");
+                        return;
+                    }
                     if (currentBalance >= amount) {
                         connection.setAutoCommit(false);
 
@@ -144,7 +158,7 @@ public class ATM {
                         updateStmt.executeUpdate();
                         //update recipients info
                         UUID recipientId = getUserIdByBankAccount(recipientBankAccount);
-                        if(recipientId !=null){
+                        if (recipientId != null) {
                             recipientStmt.setDouble(1, amount);
                             recipientStmt.setString(2, recipientId.toString());
                             recipientStmt.setString(3, recipientBankAccount);
@@ -169,7 +183,7 @@ public class ATM {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            System.out.println("Transfer fail. because:"+e.getMessage());
+            System.out.println("Transfer fail. because:" + e.getMessage());
         }
     }
     private UUID getUserIdByBankAccount(String bankAccount) {
@@ -228,27 +242,6 @@ public class ATM {
         }
     }
 
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        ATM atm = null;
-        int errorCount = 0;
-        while (errorCount<=3 && atm == null) {
-            try {
-                System.out.print("Enter your bank account: ");
-                String bankAccount = scanner.next();
-                System.out.print("Enter your password: ");
-                String password = scanner.next();
-                atm = new ATM(password, bankAccount);
-                //reset the error count
-                errorCount =0;
-            } catch (Exception e) {
-                System.out.printf("Invalid input info, %s and try again later!\n", e.getMessage());
-                errorCount++;
-            }
-        }
-        System.out.println("error time is:"+errorCount);
-        atm.showMenu();
-    }
 }
 
 
