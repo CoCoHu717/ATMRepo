@@ -67,7 +67,9 @@ INSERT INTO users (id, bank_account, username, password, balance) VALUES (UUID()
 
 ### Project Setup
 1. **Clone the Repository**: Clone this repository to your local machine.
-2. **Configure Database Connection:**
+2. **Ensure your MySQL server is running and accessible.**
+3. **Configure Database Connection:**
+   
 - Create a db.properties file in src/main/resources/
 - Add the following properties to the db.properties file:
   
